@@ -15,7 +15,7 @@ All the scripts *.py run over python 2.7.x, and all the *.ipynb run over ipython
 Some additional packages for python are: numpy, scipy and  matplotlib.
 Graficos2D.ipynb need some video codec  installed to make the animations.
 
-For Windows I advise to install anaconda from , it is a bundle with all the necessary things
+For Windows I advise to install anaconda from http://continuum.io/ , it is a bundle with all the necessary things
 
 ##############################
 3.LETS START
