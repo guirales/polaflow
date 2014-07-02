@@ -1,0 +1,29 @@
+#################################
+1. CONTENT
+##################################
+The content of this package (1D_Polariton) is:
+DF2L.py : principal function, it is the core of the package.
+MethDF2L2R.py : Control function, it is in charged of start DF2L with the necessaries parameters.
+Graficos2D.ipynb : it is a file for ipython notebook.
+
+#################################
+2. BEFORE BEGINING
+################################
+
+Before to attempt some calculus with the package, you need some programs and libraries installed in your system.
+All the scripts *.py run over python 2.7.x, and all the *.ipynb run over ipython notebook 1.2.x.
+Some additional packages for python are: numpy, scipy and  matplotlib.
+Graficos2D.ipynb need some video codec  installed to make the animations.
+
+For Windows I advise to install anaconda from , it is a bundle with all the necessary things
+
+##############################
+3.LETS START
+#############################
+3.1 Download the scripts (*.py and *.ipynb) in some folder in your system.
+3.2 Edit the script MethDF2L2R.py with your parameters and save it.
+3.4 Run the script MethDF2L2R.py
+    3.4.1. In shell type python MethDF2L2R.py
+    3.4.2. In your favorite editor (like spyder) just run the file
+3.5 This scipt will make a folder Data (or Datos) and inner it will put the calculus results, ordering by name and date in the  "year_month_day_hour_minute_second" format to the end.
+3.6 Lunch ipython notebook and load Graficos2D.ipynb , run each cell.
