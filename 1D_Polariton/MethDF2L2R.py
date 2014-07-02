@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Editado por mi!
+
 Created on Thu Apr 24 11:10:28 2014
 
 @author: Polaflow
