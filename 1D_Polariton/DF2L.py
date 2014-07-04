@@ -12,7 +12,7 @@ import sys,time
 
 ###Polariton dos ramas###
 def DF2L2R(Psi0c,Psi0x,V0c,V0x,f,a0c,a0x,gR,g,gammaC,gammaX,X,T0,puntos=2,precision=10):
-    print "usando la version mejorada DF2L2R de DF2L" 
+    print "using the improved version  DF2L2R of DF2L" 
     def CS(num):
         if abs(num)<10:
             if num<0:
@@ -74,7 +74,7 @@ def DF2L2R(Psi0c,Psi0x,V0c,V0x,f,a0c,a0x,gR,g,gammaC,gammaX,X,T0,puntos=2,precis
     for n in range(1,Nt+1):
         if n==3:
             end=time.time()
-            tfi=(end-start)*(Nt+1)
+            tfi=(end-start)*(Nt+1)/2.0
             sys.stdout.write(hms(tfi))        
         F=f(n*Dt)
         #primer orden   
@@ -99,5 +99,3 @@ def DF2L2R(Psi0c,Psi0x,V0c,V0x,f,a0c,a0x,gR,g,gammaC,gammaX,X,T0,puntos=2,precis
     
     sys.stdout.write("]")
     return PsiFc,PsiFx
-
-
