@@ -7,7 +7,7 @@ Created on Fri Jul  4 18:46:46 2014
 from __future__ import division
 
 class Particle():
-    from numpy import zeros    
+    from numpy import zeros,exp,log,arange    
     hbar=0.65731#meV.ps 
     rabi=2.62989731    ##ps^-1  rabii frequency
     x=zeros(50)
@@ -16,10 +16,14 @@ class Particle():
     mass=2.0    #meV.[ps^2/um^2] efective mass
     w0=0
     gamma=0.0
-    g=0    
+    g=0
+    R=10
+    abc=0.3    
     Psi0=zeros(len(x))
     Potential=zeros(len(x))
     Psi=zeros(len(x))
+    Absor=exp(log(abc)*arange(2*R)/R)    
+    
     
     def pump(self,x,t):
         return 0*x*t
@@ -76,12 +80,37 @@ g: %s"""%(self.name,self.mass,self.hbar,self.rabi,self.gamma,self.w0,self.g)
         axes[1,1].plot(self.x,self.pump(self.x,0))
         
         return fig,axes
+    
+    def indices(self,lista,xa,xb):
+        if xa>=lista[0]and xb<=lista[-1]:
+            Nt=len(lista)
+            L=lista[-1]-lista[0]
+            na=(xa-lista[0])/L
+            nb=(xb-lista[0])/L
+            return int(Nt*na),int((Nt-1)*nb)
+        else:
+            print "index graph out of range"
+            return 0,-1
+            
+    def PlotXT(self,contrast=2,xa=0,xb=-1,ta=0,tb=-1,**kargs):
         
-    def PlotXT(self,contrast=2,**kargs):
         import matplotlib.pyplot as plt
+        
+        if xa==0:
+            xa=self.x[0]    
+        if xb==-1:
+            xb=self.x[-1]        
+        if ta==0:
+            ta=self.t[0]
+        if tb==-1:
+            tb=self.t[-1]
+        
         fig, axes = plt.subplots(1,1,**kargs)
-        axes.set_title(self.name)
-        axes.imshow(abs(self.Psi)**contrast,extent=[self.x[0],self.x[-1],self.t[0],self.t[-1]],aspect='auto',origin='lower')
+        
+        xia,xib=self.indices(self.x,xa,xb)
+        tia,tib=self.indices(self.t,ta,tb)
+        axes.set_title(self.name)        
+        axes.imshow(abs(self.Psi[tia:tib,xia:xib])**contrast,extent=[self.x[xia],self.x[xib],self.t[tia],self.t[tib]],aspect='auto',origin='lower')
         return fig,axes
 ###########################################
 
@@ -90,7 +119,7 @@ g: %s"""%(self.name,self.mass,self.hbar,self.rabi,self.gamma,self.w0,self.g)
 class Polaflow1D(object):
     def __init__(self,pho=None,exc=None):
         from numpy import zeros
-        self.abc=3.0
+        self.abc=0.3
         self.pho=pho
         self.exc=exc
         self.x=zeros(50)                                              ###
@@ -112,6 +141,7 @@ class Polaflow1D(object):
         self.error=(0,0)
         self.tolerance=1E-2
         self.sweeps=2
+        self.apod=1.0E-3
 ###############################
 #<CS############################
     def CS(self,num):
@@ -138,17 +168,23 @@ class Polaflow1D(object):
         self.J=len(self.x)
         self.Dt=self.t[1]-self.t[0]                                                            ###
         self.Nt=len(self.t)
+        self.pho.R=self.exc.R=self.R
+        self.pho.abc=self.exc.abc=self.abc
         self.pho.x=self.exc.x=self.x
         self.pho.t=self.exc.t=self.t
         self.pho.rabi=self.exc.rabi=self.rabi
         self.pho.hbar=self.exc.hbar=self.hbar
 #Refresh>######################
 #<Save##########################            
-    def Save(self):
+    def Save(self,FileNameAuto=True):
         import time
         import os
         from numpy import save#,meshgrid
-        suffix=str(self.name)+time.strftime("_%Y_%m_%d_%H_%M_%S")
+        if FileNameAuto:
+            suffix=str(self.name)+time.strftime("_%Y_%m_%d_%H_%M_%S")
+        else:
+            suffix=str(self.name)
+            
         self.path=self.pathwd+suffix
         formato="""
 namex="{0}"
@@ -161,11 +197,15 @@ mc={6}
 gammac={7}
 gc={8}
 w0c={9}
-hbar={10}
-rabi={11}
-M={12}
-R={13}
-suffix="{14}"
+namep="{10}"
+hbar={11}
+rabi={12}
+M={13}
+R={14}
+suffix="{15}"
+sweeps={16}
+abc={17}
+apod={18}
         """  
         try:                    #
             os.stat(self.pathwd)       #
@@ -176,7 +216,8 @@ suffix="{14}"
         const=open(self.path+"/constants.py","w")
         const.write(formato.format(self.exc.name,self.exc.mass,self.exc.gamma,self.exc.g,self.exc.w0,
                                    self.pho.name,self.pho.mass,self.pho.gamma,self.pho.g,self.pho.w0,
-                                   self.hbar,self.rabi,self.M,self.R,suffix))
+                                   self.name, self.hbar,self.rabi,self.M,self.R,suffix,self.sweeps,
+                                   self.abc,self.apod))
         const.close()
         save(self.path+"/x"+suffix+".npy",self.x)
         save(self.path+"/t"+suffix+".npy",self.t)
@@ -204,7 +245,7 @@ suffix="{14}"
             self.pho.Psi,self.exc.Psi,self.error=ShaoWang(self.pho.Psi0,self.exc.Psi0,V0C,V0X,self.pho.pump,EmC,
                                              EmX,self.rabi,self.exc.g,self.pho.gamma,self.exc.gamma,
                                              self.x,self.t,R=self.R,M=self.M,hbar=self.hbar,
-                                             sweeps=self.sweeps,tolerance=self.tolerance,abc=self.abc)
+                                             sweeps=self.sweeps,tolerance=self.tolerance,abc=self.abc,apod=self.apod)
 
         else:
             print "Warning! The shape of all vectors of functions, space, and potentials must be the same. Correct this and try again "
@@ -217,10 +258,11 @@ suffix="{14}"
     
     def Load(self):
         from numpy import load
-        import os
+        import os, imp
         wdir=os.getcwd()
         os.chdir(self.path)
         import constants as ct
+        imp.reload(ct)
         self.exc.name=ct.namex
         self.exc.mass=ct.mx
         self.exc.gamma=ct.gammax
@@ -231,18 +273,24 @@ suffix="{14}"
         self.pho.gamma=ct.gammac
         self.pho.g=ct.gc
         self.pho.w0=ct.w0c
+        self.name=ct.namep
         self.hbar=ct.hbar
         self.rabi=ct.rabi
         self.M=ct.M
         self.R=ct.R
         suffix=ct.suffix
+        self.sweeps=ct.sweeps
+        self.abc=ct.abc
+        self.apod=ct.apod
         
         self.x=load("x"+suffix+".npy")
         self.t=load("t"+suffix+".npy")
         self.pho.Psi=load(self.pho.name+suffix+".npy")
+        self.pho.Psi0=self.pho.Psi[0]
         self.pho.Potential=load("V0C"+suffix+".npy")
         self.pumpx=load("pumpx"+suffix+".npy")        
         self.exc.Psi=load(self.exc.name+suffix+".npy")
+        self.exc.Psi0=self.exc.Psi[0]
         self.exc.Potential=load("V0X"+suffix+".npy")
         os.chdir(wdir)
         
@@ -253,9 +301,9 @@ suffix="{14}"
         self.J=len(self.x)                                                               ###                                              ###
         self.Dt=self.t[1]-self.t[0]                                                            ###
         self.Nt=len(self.t)        
-        
+        os.chdir(wdir)
         self.Refresh()
-        print "Data loaded..."
+        print "Data %s loaded..."%self.name
 ####################################        
 #############################
     def PlotKE(self,contrast=2):
@@ -301,7 +349,7 @@ suffix="{14}"
         
         pl1=abs(self.pho.Psi)**2
         pl2=abs(self.exc.Psi)**2
-        maxi=(array([pl1[0].max(),pl1[0].max()])).max()
+        maxi=(array([pl1[0].max(),pl2[0].max()])).max()
         
         fig2, axes = plt.subplots(1,2)
         axes[0].plot(self.x,pl1[0])

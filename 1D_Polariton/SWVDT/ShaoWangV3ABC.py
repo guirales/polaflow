@@ -5,7 +5,7 @@ Created on Thu Jul 17 14:47:41 2014
 @author: Polaflow
 """
 from __future__ import division
-from numpy import exp,append,array,bmat,dot,conjugate,sqrt,concatenate,ones,arange,shape
+from numpy import exp,append,array,bmat,dot,conjugate,sqrt,concatenate,ones,arange,log,zeros
 from scipy.misc import factorial,pade
 #from numpy.linalg.linalg import inv, lu
 from scipy.linalg import inv,solve
@@ -13,8 +13,8 @@ from scipy.linalg import inv,solve
 from scipy.interpolate import approximate_taylor_polynomial  
 import sys
  
-def ShaoWang(Psi0c,Psi0x,V0c,V0x,f,mc,mx,Om,gx,gammaC,gammaX,x,t,R=10,M=10,hbar=0.6582,sweeps=2,tolerance=1E-2,abc=3.0):
-    print "using the improved version  ShaoWang of ShaoWangV3ABC final setup2" 
+def ShaoWang(Psi0c,Psi0x,V0c,V0x,f,mc,mx,Om,gx,gammaC,gammaX,x,t,R=10,M=10,hbar=0.6582,sweeps=2,tolerance=1E-2,abc=0.3,apod=1.0E-3):
+    print "using the improved version  ShaoWang of ShaoWangV3ABC final apodized" 
     #print (gammaC,gammaX)
     def CS(num):
         if abs(num)<10:
@@ -37,7 +37,8 @@ def ShaoWang(Psi0c,Psi0x,V0c,V0x,f,mc,mx,Om,gx,gammaC,gammaX,x,t,R=10,M=10,hbar=
     J = len(x)
     T = len(t)
     dx = x[1]-x[0]
-    dt = t[1]-t[0]  
+    dt = t[1]-t[0]
+    print "Dx: %.3f, Dt: %.3f, abc: %.2f"%(dx,dt,abc)
     ##############################################################################
     #Functions 
     ##############################################################################
@@ -122,9 +123,16 @@ def ShaoWang(Psi0c,Psi0x,V0c,V0x,f,mc,mx,Om,gx,gammaC,gammaX,x,t,R=10,M=10,hbar=
     phix2=Psi0x[-2*R-1:-1]
     phic1=Psi0c[1:2*R+1]
     phic2=Psi0c[-2*R-1:-1]
-
+    Intx0=sum(abs(Psi0x)**2)*dx
+    Intc0=sum(abs(Psi0c)**2)*dx
+    ##This control the division by zero
+    if Intx0==0.0:
+        Intx0=1
+    if Intc0==0.0:
+        Intc0=1
 #    Absor=exp(-(abc/(R)*array([0 if r<R else (r-R) for r in arange(2*R)])))        
-    Absor=0*exp(-(abc/(R)*arange(2*R)))     
+#    Absor=exp(-(abc/(R)*arange(2*R)))     
+    Absor=exp(log(abc)*arange(2*R)/R)
     dissipa=-concatenate((dt*gammaX*ones(J),dt*gammaC*ones(J)))
     psinl=psiin
     MT=[]
@@ -181,7 +189,17 @@ def ShaoWang(Psi0c,Psi0x,V0c,V0x,f,mc,mx,Om,gx,gammaC,gammaX,x,t,R=10,M=10,hbar=
         phix2=phix2B
         phic1=phic1B
         phic2=phic2B
-######End ABC       
+######End ABC    
+######Apodization
+        Intxn=sum(abs(psiin1[:J])**2)*dx/Intx0 #exc
+        Intcn=sum(abs(psiin1[J:])**2)*dx/Intc0 #cav
+        #print "apod ",apod,"intxn ",Intxn," intx0 ", Intx0,"intcn ",Intcn," intc0 ", Intc0
+        if Intxn<=apod:
+            psiin1[:J]=zeros(J)
+        if Intcn<=apod:
+            psiin1[J:]=zeros(J)
+        
+##########
         #New wavefunction
         psiin=psiin1
         psinl=psiin1
