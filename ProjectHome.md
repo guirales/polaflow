@@ -1,0 +1,1 @@
+Numerical integration of coupled Schrödinger equations with driving, dissipation and nonlinearities, in 1D and 2D.
